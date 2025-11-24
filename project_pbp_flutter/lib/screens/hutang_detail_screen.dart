@@ -17,6 +17,7 @@ class HutangDetailScreen extends StatefulWidget {
 }
 
 class _HutangDetailScreenState extends State<HutangDetailScreen> {
+  late Hutang currentHutang;
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -25,15 +26,22 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
 
   final DateFormat dateFormat = DateFormat('dd MMMM yyyy', 'id_ID');
 
-  Color _getStatusColor(String status) {
+  @override
+  void initState() {
+    super.initState();
+    currentHutang = widget.hutang;
+  }
+
+  Color _getStatusColor(BuildContext context, String status) {
+    final cs = Theme.of(context).colorScheme;
     switch (status) {
       case 'paid':
-        return Colors.green;
+        return cs.tertiary;
       case 'overdue':
         return Colors.red;
       case 'pending':
       default:
-        return Colors.orange;
+        return Colors.red;
     }
   }
 
@@ -91,9 +99,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 final amountText = amountController.text.trim();
                 if (amountText.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Jumlah pembayaran wajib diisi'),
-                      backgroundColor: Colors.red,
+                    SnackBar(
+                      content: const Text('Jumlah pembayaran wajib diisi'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                   return;
@@ -102,9 +110,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 final amount = double.tryParse(amountText);
                 if (amount == null || amount <= 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Jumlah pembayaran tidak valid'),
-                      backgroundColor: Colors.red,
+                    SnackBar(
+                      content: const Text('Jumlah pembayaran tidak valid'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                   return;
@@ -114,7 +122,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Jumlah pembayaran tidak boleh melebihi sisa hutang Rp ${currencyFormat.format(widget.hutang.remainingAmount)}'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                   return;
@@ -139,9 +147,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                     }
                     
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pembayaran berhasil ditambahkan'),
-                        backgroundColor: Colors.green,
+                      SnackBar(
+                        content: const Text('Pembayaran berhasil ditambahkan'),
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
                       ),
                     );
                   } catch (e) {
@@ -153,7 +161,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Pembayaran berhasil, namun gagal memperbarui tampilan: ${e.toString()}'),
-                        backgroundColor: Colors.orange,
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
                       ),
                     );
                   }
@@ -162,7 +170,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Gagal menambahkan pembayaran: ${e.toString()}'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                 }
@@ -175,14 +183,86 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
     );
   }
 
+  Future<void> _markAsPaid() async {
+    final remaining = currentHutang.remainingAmount;
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Hutang sudah lunas'),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final added = await ApiService.addPayment(
+        hutangId: currentHutang.id,
+        amount: remaining,
+        notes: 'Pelunasan cepat',
+      );
+      if (mounted) {
+        setState(() {
+          currentHutang = added;
+        });
+      }
+
+      if (currentHutang.status != 'paid') {
+        try {
+          final refreshed = await ApiService.getHutang(currentHutang.id);
+          if (mounted) {
+            setState(() {
+              currentHutang = refreshed;
+            });
+          }
+        } catch (_) {}
+      }
+
+      if (currentHutang.status != 'paid') {
+        final newPayments = List<HutangPayment>.from(currentHutang.payments ?? const [])
+          ..add(HutangPayment(id: 'temp', amount: remaining, paymentDate: DateTime.now(), notes: 'Pelunasan cepat'));
+        if (mounted) {
+          setState(() {
+            currentHutang = Hutang(
+              id: currentHutang.id,
+              description: currentHutang.description,
+              amount: currentHutang.amount,
+              dueDate: currentHutang.dueDate,
+              createdDate: currentHutang.createdDate,
+              status: 'paid',
+              debtor: currentHutang.debtor,
+              notes: currentHutang.notes,
+              payments: newPayments,
+            );
+          });
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Status diperbarui menjadi LUNAS'),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memperbarui status: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hutang = widget.hutang;
+    final cs = Theme.of(context).colorScheme;
+    final hutang = currentHutang;
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Hutang'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: cs.primary,
         elevation: 4,
       ),
       body: SingleChildScrollView(
@@ -194,11 +274,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue[800]!, Colors.blue[600]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -217,8 +293,8 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                       Expanded(
                         child: Text(
                           hutang.description,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -230,17 +306,17 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(hutang.status).withValues(alpha: 0.2),
+                          color: _getStatusColor(context, hutang.status).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: _getStatusColor(hutang.status),
+                            color: _getStatusColor(context, hutang.status),
                             width: 1,
                           ),
                         ),
                         child: Text(
                           _getStatusText(hutang.status),
                           style: TextStyle(
-                            color: _getStatusColor(hutang.status),
+                            color: _getStatusColor(context, hutang.status),
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -250,47 +326,29 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                   ),
                   const SizedBox(height: 20),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Hutang',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Hutang',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          Text(
-                            currencyFormat.format(hutang.amount),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                            const SizedBox(height: 4),
+                            Text(
+                              currencyFormat.format(hutang.amount),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Text(
-                            'Sisa Hutang',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            currencyFormat.format(hutang.remainingAmount),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -303,7 +361,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -316,12 +374,12 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Informasi Penghutang',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -331,14 +389,14 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.blue[100],
+                          color: cs.secondaryContainer,
                           shape: BoxShape.circle,
                         ),
                         child: Center(
                           child: Text(
                             hutang.debtor.name.substring(0, 1).toUpperCase(),
                             style: TextStyle(
-                              color: Colors.blue[800],
+                              color: Theme.of(context).colorScheme.onSecondaryContainer,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -352,10 +410,10 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           children: [
                             Text(
                               hutang.debtor.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             if (hutang.debtor.phone != null) ...[
@@ -364,7 +422,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                                 hutang.debtor.phone!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -374,7 +432,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                                 hutang.debtor.address!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -392,10 +450,10 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: hutang.isOverdue ? Colors.red[50] : Colors.orange[50],
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: hutang.isOverdue ? Colors.red[300]! : Colors.orange[300]!,
+                  color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant,
                   width: 1,
                 ),
               ),
@@ -403,7 +461,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 children: [
                   Icon(
                     hutang.isOverdue ? Icons.warning : Icons.schedule,
-                    color: hutang.isOverdue ? Colors.red[600] : Colors.orange[600],
+                    color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -416,7 +474,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: hutang.isOverdue ? Colors.red[600] : Colors.orange[600],
+                            color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -424,7 +482,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           dateFormat.format(hutang.dueDate),
                           style: TextStyle(
                             fontSize: 16,
-                            color: hutang.isOverdue ? Colors.red[700] : Colors.orange[700],
+                            color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -434,7 +492,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                             '${DateTime.now().difference(hutang.dueDate).inDays} hari yang lalu',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.red[600],
+                              color: Colors.red,
                             ),
                           ),
                         ],
@@ -451,7 +509,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -464,20 +522,20 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Catatan',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       hutang.notes!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                         height: 1.5,
                       ),
                     ),
@@ -492,7 +550,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -505,12 +563,12 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Riwayat Pembayaran',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -529,10 +587,10 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                               children: [
                                 Text(
                                   currencyFormat.format(payment.amount),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.green,
+                                    color: cs.tertiary,
                                   ),
                                 ),
                                 if (payment.notes != null) ...[
@@ -541,7 +599,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                                     payment.notes!,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -551,7 +609,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                               dateFormat.format(payment.paymentDate),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -569,11 +627,11 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
       ),
       floatingActionButton: hutang.status != 'paid'
           ? FloatingActionButton.extended(
-              onPressed: _showAddPaymentDialog,
-              backgroundColor: Colors.green[600],
-              icon: const Icon(Icons.payment, color: Colors.white),
+              onPressed: _markAsPaid,
+              backgroundColor: cs.secondary,
+              icon: const Icon(Icons.check_circle, color: Colors.white),
               label: const Text(
-                'Tambah Pembayaran',
+                'Sudah Lunas',
                 style: TextStyle(color: Colors.white),
               ),
             )

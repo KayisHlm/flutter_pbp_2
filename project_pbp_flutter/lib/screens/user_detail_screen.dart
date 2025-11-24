@@ -60,7 +60,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -80,15 +80,16 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     return userHutangs.where((hutang) => hutang.status != 'paid').length;
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(BuildContext context, String status) {
+    final cs = Theme.of(context).colorScheme;
     switch (status) {
       case 'paid':
-        return Colors.green;
+        return cs.tertiary;
       case 'overdue':
         return Colors.red;
       case 'pending':
       default:
-        return Colors.orange;
+        return Colors.red;
     }
   }
 
@@ -191,15 +192,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         description: descriptionController.text,
                         amount: double.parse(amountController.text),
                         dueDate: selectedDate,
-                        debtorId: widget.user.id,
+                        debtorEmail: widget.user.email ?? '',
                         notes: notesController.text.isEmpty ? null : notesController.text,
                       );
                       
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Hutang berhasil ditambahkan'),
-                          backgroundColor: Colors.green,
+                        SnackBar(
+                          content: const Text('Hutang berhasil ditambahkan'),
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
                         ),
                       );
                       await refreshData();
@@ -208,7 +209,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Error: ${e.toString()}'),
-                          backgroundColor: Colors.red,
+                          backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                     }
@@ -225,19 +226,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final user = widget.user;
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Penghutang'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: cs.primary,
         elevation: 4,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: refreshData,
-          ),
-        ],
+        actions: const [],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -248,7 +245,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     children: [
                       Text(
                         errorMessage,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: Theme.of(context).colorScheme.secondary),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -271,7 +268,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.blue[800]!, Colors.blue[600]!],
+                              colors: [cs.secondary, cs.secondaryContainer],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -346,7 +343,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
@@ -358,20 +355,20 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                   ),
                                   child: Column(
                                     children: [
-                                      Text(
-                                        currencyFormat.format(getTotalHutang()),
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: getTotalHutang() > 0 ? Colors.red[700] : Colors.green[700],
-                                        ),
+                                    Text(
+                                      currencyFormat.format(getTotalHutang()),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: getTotalHutang() > 0 ? Colors.red : Theme.of(context).colorScheme.onSurface,
                                       ),
+                                    ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'Total Hutang',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -383,7 +380,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
@@ -400,7 +397,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
-                                          color: getJumlahHutang() > 0 ? Colors.orange[700] : Colors.green[700],
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -408,7 +405,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                         'Jumlah Hutang',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -425,12 +422,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Daftar Hutang',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               TextButton(
@@ -485,7 +482,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                               style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.black87,
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ),
@@ -495,17 +492,17 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: _getStatusColor(hutang.status).withValues(alpha: 0.1),
+                                              color: _getStatusColor(context, hutang.status).withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(12),
                                               border: Border.all(
-                                                color: _getStatusColor(hutang.status),
+                                                color: _getStatusColor(context, hutang.status),
                                                 width: 1,
                                               ),
                                             ),
                                             child: Text(
                                               _getStatusText(hutang.status),
                                               style: TextStyle(
-                                                color: _getStatusColor(hutang.status),
+                                                color: _getStatusColor(context, hutang.status),
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -522,17 +519,17 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                             children: [
                                               Text(
                                                 'Total: ${currencyFormat.format(hutang.amount)}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.black87,
-                                                ),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Theme.of(context).colorScheme.onSurface,
+                                              ),
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
                                                 'Sisa: ${currencyFormat.format(hutang.remainingAmount)}',
                                                 style: TextStyle(
                                                   fontSize: 14,
-                                                  color: hutang.remainingAmount > 0 ? Colors.red[600] : Colors.green[600],
+                                                  color: hutang.remainingAmount > 0 ? Colors.red : cs.tertiary,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
@@ -545,14 +542,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                 'Jatuh Tempo',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.grey[600],
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
                                               Text(
                                                 dateFormat.format(hutang.dueDate),
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: hutang.isOverdue ? Colors.red[600] : Colors.grey[700],
+                                                  color: hutang.isOverdue ? cs.error : Theme.of(context).colorScheme.onSurfaceVariant,
                                                   fontWeight: hutang.isOverdue ? FontWeight.bold : FontWeight.normal,
                                                 ),
                                               ),
@@ -588,7 +585,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddHutangDialog,
-        backgroundColor: Colors.blue[800],
+        backgroundColor: cs.secondary,
         child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );

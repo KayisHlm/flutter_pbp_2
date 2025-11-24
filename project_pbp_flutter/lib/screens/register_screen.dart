@@ -39,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Passwords do not match'),
-          backgroundColor: Colors.red[600],
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -62,7 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message'] ?? 'Registration successful'),
-              backgroundColor: Colors.green[600],
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
             ),
           );
           
@@ -79,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message'] ?? 'Registration failed'),
-              backgroundColor: Colors.red[600],
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -89,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -104,10 +104,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: cs.primary,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -127,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Create Account',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
@@ -137,7 +138,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Join Hutangmu today',
                   style: TextStyle(
-                    color: Colors.grey[400],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 16,
                   ),
                   textAlign: TextAlign.center,
@@ -147,25 +148,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Name Field
                 TextFormField(
                   controller: _nameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Full Name (Optional)',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.green[600]),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.person_outline, color: cs.primary),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -173,25 +165,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Username Field
                 TextFormField(
                   controller: _usernameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Username',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.alternate_email, color: Colors.green[600]),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.alternate_email, color: cs.primary),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -208,26 +191,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Email Field
                 TextFormField(
                   controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.email_outlined, color: Colors.green[600]),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.email_outlined, color: cs.primary),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -245,15 +219,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.lock_outline, color: Colors.green[600]),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.lock_outline, color: cs.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () {
                         setState(() {
@@ -261,20 +235,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -292,15 +257,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Confirm Password',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.lock_outline, color: Colors.green[600]),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.lock_outline, color: cs.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () {
                         setState(() {
@@ -308,20 +273,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -333,12 +289,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 32),
                 
                 // Register Button
-                SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleRegister,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[600],
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleRegister,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -372,7 +328,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Text(
                       'Already have an account? ',
                       style: TextStyle(
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 14,
                       ),
                     ),
@@ -388,7 +344,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Text(
                         'Login',
                         style: TextStyle(
-                          color: Colors.green[600],
+                          color: cs.primary,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),

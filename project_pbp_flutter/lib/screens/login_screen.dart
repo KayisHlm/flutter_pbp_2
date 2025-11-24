@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_pbp_flutter/services/auth_service.dart';
-import 'package:project_pbp_flutter/screens/register_screen.dart';
+import 'package:project_pbp_flutter/screens/add_user_screen.dart';
 import 'package:project_pbp_flutter/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message'] ?? 'Login successful'),
-              backgroundColor: Colors.green[600],
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
             ),
           );
         }
@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result['message'] ?? 'Login failed'),
-              backgroundColor: Colors.red[600],
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -93,8 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -119,25 +120,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Username/Email Field
                 TextFormField(
                   controller: _usernameController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Username or email',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.person, color: Colors.green[600]),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.person, color: cs.primary),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -152,15 +144,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.lock, color: Colors.green[600]),
+                    hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+                    prefixIcon: Icon(Icons.lock, color: cs.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () {
                         setState(() {
@@ -168,20 +160,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       },
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[700]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green[600]!),
-                    ),
+                    filled: Theme.of(context).inputDecorationTheme.filled,
+                    fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                    border: Theme.of(context).inputDecorationTheme.border,
+                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -195,27 +178,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 
-                // Register Link
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      'Register',
-                      style: TextStyle(
-                        color: Colors.green[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
                 
                 // Login Button
@@ -224,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[600],
+                      backgroundColor: cs.secondary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -250,37 +212,36 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                // Create Account Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'New to Hutang? ',
+                // New User Button
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AddUserScreen(),
+                              ),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cs.secondary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'New User',
                       style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Create Account',
-                        style: TextStyle(
-                          color: Colors.green[600],
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),

@@ -3,8 +3,8 @@ import 'package:project_pbp_flutter/models/user.dart';
 import 'package:project_pbp_flutter/models/hutang.dart';
 import 'package:project_pbp_flutter/screens/user_detail_screen.dart';
 import 'package:project_pbp_flutter/screens/add_hutang_screen.dart';
-import 'package:project_pbp_flutter/screens/add_user_screen.dart';
 import 'package:project_pbp_flutter/services/api_service.dart';
+import 'package:project_pbp_flutter/services/auth_service.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final loadedSummary = await ApiService.getSummary();
 
       setState(() {
-        users = loadedUsers;
+        users = loadedUsers.where((u) => AuthService.currentUserId == null ? true : u.id != AuthService.currentUserId).toList();
         hutangs = loadedHutangs;
         summary = loadedSummary;
         isLoading = false;
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -73,42 +73,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hutangmu'),
-        backgroundColor: Colors.grey[850],
+        backgroundColor: cs.primary,
         elevation: 4,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddUserScreen(),
-                ),
-              );
-              if (result == true) {
-                loadData(); // Refresh data after adding user
-              }
-            },
-            tooltip: 'Tambah User Baru',
-          ),
           PopupMenuButton<String>(
             onSelected: (value) async {
-              if (value == 'settings') {
-                // Navigate to settings
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fitur Pengaturan akan segera tersedia')),
-                );
-              } else if (value == 'about') {
-                showAboutDialog(
-                  context: context,
-                  applicationName: 'Hutangmu',
-                  applicationVersion: '1.0.0',
-                  applicationLegalese: '© 2024 Hutangmu\n\nAplikasi untuk mencatat dan mengelola hutang dengan mudah.',
-                );
-              } else if (value == 'logout') {
+              if (value == 'logout') {
                 // Handle logout
                 final result = await showDialog<bool>(
                   context: context,
@@ -134,27 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'settings',
-                child: ListTile(
-                  leading: Icon(Icons.settings),
-                  title: Text('Pengaturan'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'about',
-                child: ListTile(
-                  leading: Icon(Icons.info),
-                  title: Text('Tentang'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'logout',
                 child: ListTile(
-                  leading: Icon(Icons.logout, color: Colors.red),
-                  title: Text('Logout', style: TextStyle(color: Colors.red)),
+                  leading: Icon(Icons.logout, color: cs.error),
+                  title: Text('Logout', style: TextStyle(color: cs.error)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -171,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         errorMessage,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: Theme.of(context).colorScheme.secondary),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -185,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : RefreshIndicator(
                   onRefresh: refreshData,
                   child: Container(
-                    color: Colors.grey[50],
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     child: Column(
                       children: [
                         // Summary Card
@@ -194,11 +152,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           margin: const EdgeInsets.all(16),
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.grey[850],
+                            color: cs.secondaryContainer,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -207,10 +165,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Ringkasan Hutang',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSecondaryContainer,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -225,14 +183,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Text(
                                         'Total Hutang',
                                         style: TextStyle(
-                                          color: Colors.green[400],
+                                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                                           fontSize: 14,
                                         ),
                                       ),
                                       Text(
                                         currencyFormat.format(summary['totalHutang'] ?? 0),
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -245,14 +203,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Text(
                                         'Total Piutang',
                                         style: TextStyle(
-                                          color: Colors.red[400],
+                                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                                           fontSize: 14,
                                         ),
                                       ),
                                       Text(
                                         currencyFormat.format(summary['totalHutang'] ?? 0),
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: Theme.of(context).colorScheme.onSecondaryContainer,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -271,20 +229,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Daftar Penghutang',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  // Navigate to all users screen
-                                },
-                                child: const Text('Lihat Semua'),
-                              ),
+                              const SizedBox.shrink(),
                             ],
                           ),
                         ),
@@ -324,14 +277,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: 50,
                                           height: 50,
                                           decoration: BoxDecoration(
-                                            color: Colors.blue[100],
+                                            color: cs.primary.withValues(alpha: 0.15),
                                             shape: BoxShape.circle,
                                           ),
                                           child: Center(
                                             child: Text(
                                               user.name.substring(0, 1).toUpperCase(),
                                               style: TextStyle(
-                                                color: Colors.blue[800],
+                                                color: Colors.white,
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -347,11 +300,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                             children: [
                                               Text(
                                                 user.name,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.black87,
-                                                ),
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context).colorScheme.onSurface,
+                                              ),
                                               ),
                                               if (user.phone != null) ...[
                                                 const SizedBox(height: 4),
@@ -359,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   user.phone!,
                                                   style: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.grey[600],
+                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                   ),
                                                 ),
                                               ],
@@ -376,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
-                                                color: totalHutang > 0 ? Colors.red[700] : Colors.green[700],
+                                                color: totalHutang > 0 ? Colors.red : cs.secondary,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -384,16 +337,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                               totalHutang > 0 ? 'Belum Lunas' : 'Lunas',
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: totalHutang > 0 ? Colors.red[600] : Colors.green[600],
+                                                color: totalHutang > 0 ? Colors.red : cs.tertiary,
                                               ),
                                             ),
                                           ],
                                         ),
                                         
                                         const SizedBox(width: 8),
-                                        const Icon(
+                                        Icon(
                                           Icons.chevron_right,
-                                          color: Colors.grey,
+                                          color: Theme.of(context).colorScheme.outline,
                                           size: 24,
                                         ),
                                       ],
@@ -418,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ).then((_) => loadData()); // Refresh data after adding hutang
         },
-        backgroundColor: Colors.green[600],
+        backgroundColor: cs.secondary,
         child: const Icon(Icons.add, color: Colors.white, size: 28),
         tooltip: 'Tambah Hutang Baru',
       ),

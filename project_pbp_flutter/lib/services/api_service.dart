@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:project_pbp_flutter/models/user.dart';
 import 'package:project_pbp_flutter/models/hutang.dart';
@@ -140,7 +139,7 @@ class ApiService {
     required String description,
     required double amount,
     required DateTime dueDate,
-    required String debtorId,
+    required String debtorEmail,
     String? notes,
   }) async {
     try {
@@ -151,7 +150,7 @@ class ApiService {
           'description': description,
           'amount': amount,
           'dueDate': dueDate.toIso8601String(),
-          'debtorId': debtorId,
+          'debtorEmail': debtorEmail,
           'notes': notes,
         }),
       );

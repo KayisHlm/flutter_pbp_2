@@ -12,12 +12,22 @@ app.use(cors());
 app.use(express.json());
 
 // In-memory database
-let users = []; // Debtors/users for hutang system
+let users = []; // Deprecated: explicit debtor store removed
 let hutangs = [];
 let authUsers = []; // Authentication users
 
 // Simple session management - store logged in user IDs
 let activeSessions = new Set();
+
+// Utilities
+const calcHutangFields = (hutang) => {
+  const paid = (hutang.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const amount = Number(hutang.amount || 0);
+  const remainingAmount = amount - paid;
+  const isOverdue = remainingAmount > 0 && new Date(hutang.dueDate) < new Date();
+  const status = remainingAmount === 0 ? 'paid' : (isOverdue ? 'overdue' : (hutang.status || 'pending'));
+  return { paid, remainingAmount, isOverdue, status };
+};
 
 // Authentication middleware (simple user ID based)
 const requireAuth = (req, res, next) => {
@@ -185,18 +195,28 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 // Users API (now require authentication)
 app.get('/api/users', requireAuth, function(req, res) {
   try {
-    const usersWithHutangSummary = users.map(user => {
-      const userHutangs = hutangs.filter(hutang => hutang.debtorId === user.id && hutang.status !== 'paid');
-      const totalHutang = userHutangs.reduce((sum, hutang) => sum + hutang.remainingAmount, 0);
+    const usersWithHutangSummary = authUsers.map(au => {
+      const userHutangs = hutangs.filter(h => h.debtorEmail === au.email && h.status !== 'paid');
+      const totalOutstanding = userHutangs.reduce((sum, h) => {
+        const { remainingAmount } = calcHutangFields(h);
+        return sum + remainingAmount;
+      }, 0);
       const jumlahHutang = userHutangs.length;
-      
+
       return {
-        ...user,
-        totalHutang,
-        jumlahHutang
+        id: au.id,
+        name: au.name || au.username,
+        email: au.email,
+        phone: null,
+        address: null,
+        photoUrl: null,
+        totalHutang: totalOutstanding,
+        jumlahHutang,
+        createdAt: au.createdAt,
+        updatedAt: au.updatedAt,
       };
     });
-    
+
     res.json({
       success: true,
       data: usersWithHutangSummary,
@@ -213,27 +233,52 @@ app.get('/api/users', requireAuth, function(req, res) {
 
 app.get('/api/users/:id', requireAuth, function(req, res) {
   try {
-    const user = users.find(u => u.id === req.params.id);
-    if (!user) {
+    const au = authUsers.find(u => u.id === req.params.id);
+    if (!au) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
-    const userHutangs = hutangs.filter(hutang => hutang.debtorId === user.id);
+    const userHutangs = hutangs
+      .filter(hutang => hutang.debtorEmail === au.email)
+      .map(h => ({
+        ...h,
+        debtor: {
+          id: au.id,
+          name: au.name || au.username,
+          email: au.email,
+          phone: null,
+          address: null,
+          photoUrl: null,
+          createdAt: au.createdAt,
+          updatedAt: au.updatedAt,
+        },
+      }));
+
     const totalHutang = userHutangs
       .filter(hutang => hutang.status !== 'paid')
-      .reduce((sum, hutang) => sum + hutang.remainingAmount, 0);
+      .reduce((sum, hutang) => {
+        const { remainingAmount } = calcHutangFields(hutang);
+        return sum + remainingAmount;
+      }, 0);
     const jumlahHutang = userHutangs.filter(hutang => hutang.status !== 'paid').length;
     
     res.json({
       success: true,
       data: {
-        ...user,
+        id: au.id,
+        name: au.name || au.username,
+        email: au.email,
+        phone: null,
+        address: null,
+        photoUrl: null,
         totalHutang,
         jumlahHutang,
-        hutangs: userHutangs
+        hutangs: userHutangs,
+        createdAt: au.createdAt,
+        updatedAt: au.updatedAt,
       },
       message: 'User retrieved successfully'
     });
@@ -246,51 +291,46 @@ app.get('/api/users/:id', requireAuth, function(req, res) {
   }
 });
 
+// Creation of explicit debtor users removed; use registered accounts (authUsers)
 app.post('/api/users', requireAuth, function(req, res) {
-  try {
-    const { name, phone, address, photoUrl } = req.body;
-    
-    if (!name) {
-      return res.status(400).json({
-        success: false,
-        message: 'Name is required'
-      });
-    }
-
-    const newUser = {
-      id: uuidv4(),
-      name,
-      phone: phone || null,
-      address: address || null,
-      photoUrl: photoUrl || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    
-    res.status(201).json({
-      success: true,
-      data: newUser,
-      message: 'User created successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error creating user',
-      error: error.message
-    });
-  }
+  res.status(405).json({
+    success: false,
+    message: 'Creating debtor users is disabled. Use registered account emails when adding hutang.'
+  });
 });
 
 // Hutangs API (now require authentication)
 app.get('/api/hutangs', requireAuth, function(req, res) {
   try {
     const hutangsWithDebtor = hutangs.map(hutang => {
-      const debtor = users.find(user => user.id === hutang.debtorId);
+      const au = authUsers.find(u => u.email === hutang.debtorEmail);
+      const { remainingAmount, isOverdue, status } = calcHutangFields(hutang);
+      const debtor = au
+        ? {
+            id: au.id,
+            name: au.name || au.username,
+            email: au.email,
+            phone: null,
+            address: null,
+            photoUrl: null,
+            createdAt: au.createdAt,
+            updatedAt: au.updatedAt,
+          }
+        : {
+            id: 'unknown',
+            name: (hutang.debtorEmail || 'Unknown'),
+            email: hutang.debtorEmail || null,
+            phone: null,
+            address: null,
+            photoUrl: null,
+            createdAt: null,
+            updatedAt: null,
+          };
       return {
         ...hutang,
-        debtor: debtor || null
+        remainingAmount,
+        status,
+        debtor
       };
     });
     
@@ -317,14 +357,37 @@ app.get('/api/hutangs/:id', requireAuth, function(req, res) {
         message: 'Hutang not found'
       });
     }
-
-    const debtor = users.find(user => user.id === hutang.debtorId);
+    const au = authUsers.find(u => u.email === hutang.debtorEmail);
+    const { remainingAmount, isOverdue, status } = calcHutangFields(hutang);
+    const debtor = au
+      ? {
+          id: au.id,
+          name: au.name || au.username,
+          email: au.email,
+          phone: null,
+          address: null,
+          photoUrl: null,
+          createdAt: au.createdAt,
+          updatedAt: au.updatedAt,
+        }
+      : {
+          id: 'unknown',
+          name: (hutang.debtorEmail || 'Unknown'),
+          email: hutang.debtorEmail || null,
+          phone: null,
+          address: null,
+          photoUrl: null,
+          createdAt: null,
+          updatedAt: null,
+        };
     
     res.json({
       success: true,
       data: {
         ...hutang,
-        debtor: debtor || null
+        remainingAmount,
+        status,
+        debtor: debtor
       },
       message: 'Hutang retrieved successfully'
     });
@@ -339,32 +402,31 @@ app.get('/api/hutangs/:id', requireAuth, function(req, res) {
 
 app.post('/api/hutangs', requireAuth, function(req, res) {
   try {
-    const { description, amount, dueDate, debtorId, notes } = req.body;
+    const { description, amount, dueDate, debtorEmail, notes } = req.body;
     
-    if (!description || !amount || !dueDate || !debtorId) {
+    if (!description || !amount || !dueDate || !debtorEmail) {
       return res.status(400).json({
         success: false,
-        message: 'Description, amount, dueDate, and debtorId are required'
+        message: 'Description, amount, dueDate, and debtorEmail are required'
       });
     }
 
-    const debtor = users.find(user => user.id === debtorId);
-    if (!debtor) {
+    const au = authUsers.find(u => u.email === debtorEmail);
+    if (!au) {
       return res.status(404).json({
         success: false,
-        message: 'Debtor not found'
+        message: 'Debtor email not found. Register first.'
       });
     }
 
     const newHutang = {
       id: uuidv4(),
       description,
-      amount: parseFloat(amount),
-      remainingAmount: parseFloat(amount),
+      amount: Number(amount),
       dueDate: new Date(dueDate).toISOString(),
       createdDate: new Date().toISOString(),
       status: 'pending',
-      debtorId,
+      debtorEmail,
       notes: notes || null,
       payments: [],
       createdAt: new Date().toISOString(),
@@ -377,7 +439,16 @@ app.post('/api/hutangs', requireAuth, function(req, res) {
       success: true,
       data: {
         ...newHutang,
-        debtor
+        debtor: {
+          id: au.id,
+          name: au.name || au.username,
+          email: au.email,
+          phone: null,
+          address: null,
+          photoUrl: null,
+          createdAt: au.createdAt,
+          updatedAt: au.updatedAt,
+        }
       },
       message: 'Hutang created successfully'
     });
@@ -400,17 +471,44 @@ app.put('/api/hutangs/:id', requireAuth, function(req, res) {
       });
     }
 
+    const updatePayload = { ...req.body };
+    if (updatePayload.amount !== undefined) {
+      updatePayload.amount = Number(updatePayload.amount);
+    }
+    if (updatePayload.dueDate !== undefined) {
+      updatePayload.dueDate = new Date(updatePayload.dueDate).toISOString();
+    }
     const updatedHutang = {
       ...hutangs[hutangIndex],
-      ...req.body,
+      ...updatePayload,
       updatedAt: new Date().toISOString()
     };
+    const calc = calcHutangFields(updatedHutang);
+    updatedHutang.remainingAmount = calc.remainingAmount;
+    updatedHutang.status = calc.status;
 
     hutangs[hutangIndex] = updatedHutang;
     
+    const au = authUsers.find(u => u.email === updatedHutang.debtorEmail);
+    const debtor = au
+      ? {
+          id: au.id,
+          name: au.name || au.username,
+          email: au.email,
+          phone: null,
+          address: null,
+          photoUrl: null,
+          createdAt: au.createdAt,
+          updatedAt: au.updatedAt,
+        }
+      : null;
+
     res.json({
       success: true,
-      data: updatedHutang,
+      data: {
+        ...updatedHutang,
+        debtor: debtor || null,
+      },
       message: 'Hutang updated successfully'
     });
   } catch (error) {
@@ -444,7 +542,9 @@ app.post('/api/hutangs/:id/payments', requireAuth, function(req, res) {
     const paymentAmount = parseFloat(amount);
     const hutang = hutangs[hutangIndex];
     
-    if (hutang.remainingAmount < paymentAmount) {
+    const paidSoFar = (hutang.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+    const remainingBefore = Number(hutang.amount || 0) - paidSoFar;
+    if (remainingBefore < paymentAmount) {
       return res.status(400).json({
         success: false,
         message: 'Payment amount exceeds remaining amount'
@@ -458,9 +558,11 @@ app.post('/api/hutangs/:id/payments', requireAuth, function(req, res) {
       notes: notes || null
     };
 
-    const updatedPayments = [...hutang.payments, newPayment];
-    const newRemainingAmount = hutang.remainingAmount - paymentAmount;
-    const newStatus = newRemainingAmount === 0 ? 'paid' : hutang.status;
+    const updatedPayments = [...(hutang.payments || []), newPayment];
+    const newPaid = paidSoFar + paymentAmount;
+    const newRemainingAmount = Number(hutang.amount || 0) - newPaid;
+    const isOverdue = newRemainingAmount > 0 && new Date(hutang.dueDate) < new Date();
+    const newStatus = newRemainingAmount === 0 ? 'paid' : (isOverdue ? 'overdue' : (hutang.status || 'pending'));
 
     const updatedHutang = {
       ...hutang,
@@ -472,9 +574,26 @@ app.post('/api/hutangs/:id/payments', requireAuth, function(req, res) {
 
     hutangs[hutangIndex] = updatedHutang;
     
+    const au = authUsers.find(u => u.email === updatedHutang.debtorEmail);
+    const debtor = au
+      ? {
+          id: au.id,
+          name: au.name || au.username,
+          email: au.email,
+          phone: null,
+          address: null,
+          photoUrl: null,
+          createdAt: au.createdAt,
+          updatedAt: au.updatedAt,
+        }
+      : null;
+
     res.status(201).json({
       success: true,
-      data: updatedHutang,
+      data: {
+        ...updatedHutang,
+        debtor: debtor || null,
+      },
       message: 'Payment added successfully'
     });
   } catch (error) {
@@ -491,9 +610,12 @@ app.get('/api/summary', requireAuth, function(req, res) {
   try {
     const totalHutang = hutangs
       .filter(hutang => hutang.status !== 'paid')
-      .reduce((sum, hutang) => sum + hutang.remainingAmount, 0);
+      .reduce((sum, hutang) => {
+        const { remainingAmount } = calcHutangFields(hutang);
+        return sum + remainingAmount;
+      }, 0);
     
-    const jumlahPenghutang = new Set(hutangs.map(hutang => hutang.debtorId)).size;
+    const jumlahPenghutang = new Set(hutangs.map(hutang => hutang.debtorEmail)).size;
     const jumlahHutang = hutangs.filter(hutang => hutang.status !== 'paid').length;
     const hutangLunas = hutangs.filter(hutang => hutang.status === 'paid').length;
     const hutangJatuhTempo = hutangs.filter(hutang => {

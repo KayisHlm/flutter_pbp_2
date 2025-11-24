@@ -38,9 +38,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User berhasil ditambahkan'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('User berhasil ditambahkan'),
+            backgroundColor: Theme.of(context).colorScheme.tertiary,
           ),
         );
         
@@ -49,7 +49,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal menambahkan user: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       } finally {
@@ -62,10 +62,11 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah User Baru'),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: cs.primary,
         elevation: 4,
       ),
       body: Form(
@@ -85,7 +86,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue[800]!, Colors.blue[600]!],
+                      colors: [cs.primary, cs.primaryContainer],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -198,7 +199,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[800],
+                    backgroundColor: cs.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -232,16 +233,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 child: OutlinedButton(
                   onPressed: _isLoading ? null : () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey[400]!),
+                    side: BorderSide(color: cs.outline),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Batal',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
