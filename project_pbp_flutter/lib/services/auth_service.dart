@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:project_pbp_flutter/services/api_service.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'http://10.171.254.139:3000/api';
+  static bool offline = true;
   
   static String? _currentUserId;
   static Map<String, dynamic>? _currentUser;
@@ -24,6 +26,16 @@ class AuthService {
     required String password,
     String? name,
   }) async {
+    if (offline) {
+      final user = ApiService.ensureOfflineUser(username: username, email: email, name: name ?? username);
+      _currentUserId = user.id;
+      _currentUser = user.toJson();
+      return {
+        'success': true,
+        'data': _currentUser,
+        'message': 'Registration successful'
+      };
+    }
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register'),
@@ -62,6 +74,16 @@ class AuthService {
     required String username,
     required String password,
   }) async {
+    if (offline) {
+      final user = ApiService.ensureOfflineUser(username: username, name: username);
+      _currentUserId = user.id;
+      _currentUser = user.toJson();
+      return {
+        'success': true,
+        'data': {'user': _currentUser, 'userId': _currentUserId},
+        'message': 'Login successful'
+      };
+    }
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -105,31 +127,14 @@ class AuthService {
           'message': 'No user logged in'
         };
       }
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/logout'),
-        headers: headers,
-      );
-
-      final data = jsonDecode(response.body);
       
-      // Clear local data regardless of server response
       _currentUserId = null;
       _currentUser = null;
-      
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'message': data['message'] ?? 'Logout successful'
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Logout failed'
-        };
-      }
+      return {
+        'success': true,
+        'message': 'Logout successful'
+      };
     } catch (e) {
-      // Clear local data even if there's a network error
       _currentUserId = null;
       _currentUser = null;
       
@@ -148,27 +153,11 @@ class AuthService {
           'message': 'No user logged in'
         };
       }
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/auth/me'),
-        headers: headers,
-      );
-
-      final data = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        _currentUser = data['data'];
-        return {
-          'success': true,
-          'data': data['data'],
-          'message': data['message'] ?? 'User profile retrieved'
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get user profile'
-        };
-      }
+      return {
+        'success': true,
+        'data': _currentUser,
+        'message': 'User profile retrieved'
+      };
     } catch (e) {
       return {
         'success': false,
@@ -180,5 +169,19 @@ class AuthService {
   static void clearSession() {
     _currentUserId = null;
     _currentUser = null;
+  }
+
+  static Future<Map<String, dynamic>> loginOffline({
+    required String username,
+    required String password,
+  }) async {
+    final user = ApiService.ensureOfflineUser(username: username, name: username);
+    _currentUserId = user.id;
+    _currentUser = user.toJson();
+    return {
+      'success': true,
+      'data': {'user': _currentUser, 'userId': _currentUserId},
+      'message': 'Login berhasil'
+    };
   }
 }

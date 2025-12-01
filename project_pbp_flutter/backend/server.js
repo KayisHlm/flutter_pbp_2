@@ -55,8 +55,12 @@ const requireAuth = (req, res, next) => {
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, email, password, name } = req.body;
-    
+    let { username, email, password, name } = req.body;
+    username = (username || '').trim();
+    email = (email || '').trim().toLowerCase();
+    password = (password || '').toString();
+    name = (name || username).toString();
+
     if (!username || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -64,8 +68,24 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = authUsers.find(u => u.email === email || u.username === username);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    const existingUser = authUsers.find(u =>
+      (u.email || '').toLowerCase() === email || (u.username || '').toLowerCase() === username.toLowerCase()
+    );
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -73,24 +93,21 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    const now = new Date().toISOString();
 
     const newUser = {
       id: uuidv4(),
       username,
       email,
       password: hashedPassword,
-      name: name || username,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      name,
+      createdAt: now,
+      updatedAt: now
     };
 
     authUsers.push(newUser);
-    
-    // Don't return password
     const { password: _, ...userWithoutPassword } = newUser;
-    
     res.status(201).json({
       success: true,
       data: userWithoutPassword,
@@ -107,8 +124,10 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    
+    let { username, password } = req.body;
+    username = (username || '').trim().toLowerCase();
+    password = (password || '').toString();
+
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -116,8 +135,9 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Find user by username or email
-    const user = authUsers.find(u => u.username === username || u.email === username);
+    const user = authUsers.find(u =>
+      (u.username || '').toLowerCase() === username || (u.email || '').toLowerCase() === username
+    );
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -125,7 +145,6 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -134,17 +153,13 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Add to active sessions
     activeSessions.add(user.id);
-    
-    // Don't return password
     const { password: _, ...userWithoutPassword } = user;
-    
     res.json({
       success: true,
       data: {
         user: userWithoutPassword,
-        userId: user.id // Return user ID for subsequent requests
+        userId: user.id
       },
       message: 'Login successful'
     });
@@ -671,7 +686,7 @@ app.use(function(req, res) {
   });
 });
 
-app.listen(PORT, function() {
+app.listen(PORT, '0.0.0.0', function() {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Authentication: Use /api/auth/login to get userId, then include X-User-Id header in requests`);

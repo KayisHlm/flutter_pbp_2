@@ -1,57 +1,80 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:math';
 import 'package:project_pbp_flutter/models/user.dart';
 import 'package:project_pbp_flutter/models/hutang.dart';
 import 'package:project_pbp_flutter/services/auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'http://10.171.254.139:3000/api';
+  static bool offline = true;
+  static final List<User> _users = [];
+  static final List<Hutang> _hutangs = [];
+
+  static String _genId() {
+    final r = Random();
+    return '${DateTime.now().millisecondsSinceEpoch}${r.nextInt(999999)}';
+  }
+
+  static User _ensureUserByEmail(String email, {String? name}) {
+    final idx = _users.indexWhere((u) => (u.email ?? '').toLowerCase() == email.toLowerCase());
+    if (idx != -1) return _users[idx];
+    final user = User(
+      id: _genId(),
+      name: name ?? email.split('@').first,
+      email: email,
+      phone: null,
+      address: null,
+      photoUrl: null,
+      createdAt: DateTime.now().toIso8601String(),
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+    _users.add(user);
+    return user;
+  }
   
   // Users API
   static Future<List<User>> getUsers() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users'),
-        headers: AuthService.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return (data['data'] as List).map((userJson) => User.fromJson(userJson)).toList();
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load users');
-        }
-      } else {
-        throw Exception('Failed to load users: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error getting users: $e');
-      rethrow;
+    if (offline) {
+      final result = _users.map((u) {
+        final userHutangs = _hutangs.where((h) => h.debtor.id == u.id && h.status != 'paid').toList();
+        final totalOutstanding = userHutangs.fold<double>(0.0, (sum, h) => sum + h.remainingAmount);
+        return User(
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          address: u.address,
+          photoUrl: u.photoUrl,
+          totalHutang: totalOutstanding,
+          jumlahHutang: userHutangs.length,
+          createdAt: u.createdAt,
+          updatedAt: u.updatedAt,
+        );
+      }).toList();
+      return result;
     }
+    throw Exception('Offline mode only');
   }
 
   static Future<User> getUser(String id) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/$id'),
-        headers: AuthService.headers,
+    if (offline) {
+      final u = _users.firstWhere((x) => x.id == id);
+      final userHutangs = _hutangs.where((h) => h.debtor.id == u.id && h.status != 'paid').toList();
+      final totalOutstanding = userHutangs.fold<double>(0.0, (sum, h) => sum + h.remainingAmount);
+      return User(
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        address: u.address,
+        photoUrl: u.photoUrl,
+        totalHutang: totalOutstanding,
+        jumlahHutang: userHutangs.length,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
       );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return User.fromJson(data['data']);
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load user');
-        }
-      } else {
-        throw Exception('Failed to load user: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error getting user: $e');
-      rethrow;
     }
+    throw Exception('Offline mode only');
   }
 
   static Future<User> createUser({
@@ -60,79 +83,36 @@ class ApiService {
     String? address,
     String? photoUrl,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users'),
-        headers: AuthService.headers,
-        body: json.encode({
-          'name': name,
-          'phone': phone,
-          'address': address,
-          'photoUrl': photoUrl,
-        }),
+    if (offline) {
+      final user = User(
+        id: _genId(),
+        name: name,
+        email: null,
+        phone: phone,
+        address: address,
+        photoUrl: photoUrl,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
       );
-
-      if (response.statusCode == 201) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return User.fromJson(data['data']);
-        } else {
-          throw Exception(data['message'] ?? 'Failed to create user');
-        }
-      } else {
-        throw Exception('Failed to create user: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error creating user: $e');
-      rethrow;
+      _users.add(user);
+      return user;
     }
+    throw Exception('Offline mode only');
   }
 
   // Hutangs API
   static Future<List<Hutang>> getHutangs() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/hutangs'),
-        headers: AuthService.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return (data['data'] as List).map((hutangJson) => Hutang.fromJson(hutangJson)).toList();
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load hutangs');
-        }
-      } else {
-        throw Exception('Failed to load hutangs: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error getting hutangs: $e');
-      rethrow;
+    if (offline) {
+      return List<Hutang>.from(_hutangs);
     }
+    throw Exception('Offline mode only');
   }
 
   static Future<Hutang> getHutang(String id) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/hutangs/$id'),
-        headers: AuthService.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return Hutang.fromJson(data['data']);
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load hutang');
-        }
-      } else {
-        throw Exception('Failed to load hutang: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error getting hutang: $e');
-      rethrow;
+    if (offline) {
+      return _hutangs.firstWhere((h) => h.id == id);
     }
+    throw Exception('Offline mode only');
   }
 
   static Future<Hutang> createHutang({
@@ -142,33 +122,23 @@ class ApiService {
     required String debtorEmail,
     String? notes,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/hutangs'),
-        headers: AuthService.headers,
-        body: json.encode({
-          'description': description,
-          'amount': amount,
-          'dueDate': dueDate.toIso8601String(),
-          'debtorEmail': debtorEmail,
-          'notes': notes,
-        }),
+    if (offline) {
+      final debtor = _ensureUserByEmail(debtorEmail);
+      final hutang = Hutang(
+        id: _genId(),
+        description: description,
+        amount: amount,
+        dueDate: dueDate,
+        createdDate: DateTime.now(),
+        status: 'pending',
+        debtor: debtor,
+        notes: notes,
+        payments: [],
       );
-
-      if (response.statusCode == 201) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return Hutang.fromJson(data['data']);
-        } else {
-          throw Exception(data['message'] ?? 'Failed to create hutang');
-        }
-      } else {
-        throw Exception('Failed to create hutang: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error creating hutang: $e');
-      rethrow;
+      _hutangs.add(hutang);
+      return hutang;
     }
+    throw Exception('Offline mode only');
   }
 
   static Future<Hutang> addPayment({
@@ -176,67 +146,65 @@ class ApiService {
     required double amount,
     String? notes,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/hutangs/$hutangId/payments'),
-        headers: AuthService.headers,
-        body: json.encode({
-          'amount': amount,
-          'notes': notes,
-        }),
+    if (offline) {
+      final idx = _hutangs.indexWhere((h) => h.id == hutangId);
+      if (idx == -1) throw Exception('Hutang not found');
+      final h = _hutangs[idx];
+      final payment = HutangPayment(
+        id: _genId(),
+        amount: amount,
+        paymentDate: DateTime.now(),
+        notes: notes,
       );
-
-      if (response.statusCode == 201) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return Hutang.fromJson(data['data']);
-        } else {
-          throw Exception(data['message'] ?? 'Failed to add payment');
-        }
-      } else {
-        throw Exception('Failed to add payment: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error adding payment: $e');
-      rethrow;
+      final payments = List<HutangPayment>.from(h.payments ?? []);
+      payments.add(payment);
+      final newRemaining = h.amount - payments.fold<double>(0.0, (s, p) => s + p.amount);
+      final newStatus = newRemaining <= 0 ? 'paid' : (h.dueDate.isBefore(DateTime.now()) ? 'overdue' : 'pending');
+      final updated = Hutang(
+        id: h.id,
+        description: h.description,
+        amount: h.amount,
+        dueDate: h.dueDate,
+        createdDate: h.createdDate,
+        status: newStatus,
+        debtor: h.debtor,
+        notes: h.notes,
+        payments: payments,
+      );
+      _hutangs[idx] = updated;
+      return updated;
     }
+    throw Exception('Offline mode only');
   }
 
   // Summary API
   static Future<Map<String, dynamic>> getSummary() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/summary'),
-        headers: AuthService.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success'] == true) {
-          return data['data'] as Map<String, dynamic>;
-        } else {
-          throw Exception(data['message'] ?? 'Failed to load summary');
-        }
-      } else {
-        throw Exception('Failed to load summary: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error getting summary: $e');
-      rethrow;
+    if (offline) {
+      final activeHutangs = _hutangs.where((h) => h.status != 'paid').toList();
+      final totalHutang = activeHutangs.fold<double>(0.0, (sum, h) => sum + h.remainingAmount);
+      final jumlahPenghutang = _users.length;
+      final jumlahHutang = activeHutangs.length;
+      final hutangLunas = _hutangs.where((h) => h.status == 'paid').length;
+      final hutangJatuhTempo = _hutangs.where((h) => h.status == 'overdue' || (h.status == 'pending' && h.dueDate.isBefore(DateTime.now()))).length;
+      return {
+        'totalHutang': totalHutang,
+        'jumlahPenghutang': jumlahPenghutang,
+        'jumlahHutang': jumlahHutang,
+        'hutangLunas': hutangLunas,
+        'hutangJatuhTempo': hutangJatuhTempo,
+      };
     }
+    throw Exception('Offline mode only');
   }
 
   // Helper method untuk check connection
   static Future<bool> checkConnection() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/health'),
-        headers: {'Content-Type': 'application/json'},
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Connection check failed: $e');
-      return false;
-    }
+    if (offline) return true;
+    return false;
+  }
+
+  static User ensureOfflineUser({required String username, String? email, String? name}) {
+    final em = (email ?? '${username}@example.local');
+    return _ensureUserByEmail(em, name: name ?? username);
   }
 }

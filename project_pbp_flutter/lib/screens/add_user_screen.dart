@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_pbp_flutter/services/api_service.dart';
+import 'package:project_pbp_flutter/services/auth_service.dart';
 
 class AddUserScreen extends StatefulWidget {
   const AddUserScreen({super.key});
@@ -10,6 +10,9 @@ class AddUserScreen extends StatefulWidget {
 
 class _AddUserScreenState extends State<AddUserScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -18,6 +21,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   @override
   void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
@@ -31,15 +37,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
       });
 
       try {
-        await ApiService.createUser(
+        final result = await AuthService.register(
+          username: _usernameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
           name: _nameController.text.trim(),
-          phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-          address: _addressController.text.trim().isNotEmpty ? _addressController.text.trim() : null,
         );
+        if (result['success'] != true) {
+          throw Exception(result['message'] ?? 'Registrasi gagal');
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('User berhasil ditambahkan'),
+            content: const Text('User berhasil didaftarkan'),
             backgroundColor: Theme.of(context).colorScheme.tertiary,
           ),
         );
@@ -123,6 +133,75 @@ class _AddUserScreenState extends State<AddUserScreen> {
               ),
               
               const SizedBox(height: 24),
+
+              // Username Field
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Username *',
+                  hintText: 'Contoh: budisantoso',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.account_circle),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Username wajib diisi';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Username minimal 3 karakter';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Email Field
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email *',
+                  hintText: 'Contoh: budi@example.com',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email wajib diisi';
+                  }
+                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                  if (!emailRegex.hasMatch(value.trim())) {
+                    return 'Format email tidak valid';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Password Field
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password *',
+                  hintText: 'Minimal 6 karakter',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Password wajib diisi';
+                  }
+                  if (value.trim().length < 6) {
+                    return 'Password minimal 6 karakter';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
 
               // Name Field
               TextFormField(

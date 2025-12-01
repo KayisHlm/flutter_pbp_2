@@ -37,6 +37,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> loadData() async {
     try {
+      if (!AuthService.isAuthenticated) {
+        setState(() {
+          users = [];
+          hutangs = [];
+          summary = {
+            'totalHutang': 0,
+            'jumlahPenghutang': 0,
+            'jumlahHutang': 0,
+            'hutangLunas': 0,
+            'hutangJatuhTempo': 0,
+          };
+          isLoading = false;
+          errorMessage = '';
+        });
+        return;
+      }
       setState(() {
         isLoading = true;
         errorMessage = '';
@@ -103,7 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
 
                 if (result == true) {
+                  final resp = await AuthService.logout();
                   widget.onLogout?.call();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(resp['message'] ?? 'Logout berhasil'),
+                      backgroundColor: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  );
                 }
               }
             },

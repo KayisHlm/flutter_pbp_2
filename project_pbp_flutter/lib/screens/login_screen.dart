@@ -27,67 +27,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    final result = await AuthService.loginOffline(
+      username: _usernameController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
-    try {
-      final result = await AuthService.login(
-        username: _usernameController.text.trim(),
-        password: _passwordController.text.trim(),
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
       );
-
-      if (result['success'] == true) {
-        if (mounted) {
-          // Call the callback if provided
-          widget.onLoginSuccess?.call();
-          
-          // Only navigate if not using callback-based navigation
-          if (widget.onLoginSuccess == null) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
-              ),
-            );
-          }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Login successful'),
-              backgroundColor: Theme.of(context).colorScheme.tertiary,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Login failed'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Login berhasil'),
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
+        ),
+      );
     }
   }
 
