@@ -535,6 +535,31 @@ app.put('/api/hutangs/:id', requireAuth, function(req, res) {
   }
 });
 
+app.delete('/api/hutangs/:id', requireAuth, function(req, res) {
+  try {
+    const idx = hutangs.findIndex(h => h.id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hutang not found'
+      });
+    }
+    const deleted = hutangs[idx];
+    hutangs.splice(idx, 1);
+    res.json({
+      success: true,
+      data: deleted,
+      message: 'Hutang deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting hutang',
+      error: error.message
+    });
+  }
+});
+
 // Payment API (now require authentication)
 app.post('/api/hutangs/:id/payments', requireAuth, function(req, res) {
   try {

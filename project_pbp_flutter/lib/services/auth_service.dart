@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:project_pbp_flutter/services/api_service.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://10.171.254.139:3000/api';
-  static bool offline = true;
-  
+  static const String baseUrl = 'http://127.0.0.1:3000/api';
+  static bool offline = false;
+
   static String? _currentUserId;
   static Map<String, dynamic>? _currentUser;
 
@@ -26,16 +25,6 @@ class AuthService {
     required String password,
     String? name,
   }) async {
-    if (offline) {
-      final user = ApiService.ensureOfflineUser(username: username, email: email, name: name ?? username);
-      _currentUserId = user.id;
-      _currentUser = user.toJson();
-      return {
-        'success': true,
-        'data': _currentUser,
-        'message': 'Registration successful'
-      };
-    }
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register'),
@@ -49,24 +38,21 @@ class AuthService {
       );
 
       final data = jsonDecode(response.body);
-      
+
       if (response.statusCode == 201) {
         return {
           'success': true,
           'data': data['data'],
-          'message': data['message'] ?? 'Registration successful'
+          'message': data['message'] ?? 'Registration successful',
         };
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Registration failed'
+          'message': data['message'] ?? 'Registration failed',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -74,95 +60,72 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    if (offline) {
-      final user = ApiService.ensureOfflineUser(username: username, name: username);
-      _currentUserId = user.id;
-      _currentUser = user.toJson();
-      return {
-        'success': true,
-        'data': {'user': _currentUser, 'userId': _currentUserId},
-        'message': 'Login successful'
-      };
-    }
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
+        body: jsonEncode({'username': username, 'password': password}),
       );
 
       final data = jsonDecode(response.body);
-      
+
       if (response.statusCode == 200) {
         _currentUserId = data['data']['userId'];
         _currentUser = data['data']['user'];
-        
+
         return {
           'success': true,
           'data': data['data'],
-          'message': data['message'] ?? 'Login successful'
+          'message': data['message'] ?? 'Login successful',
         };
       } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Login failed'
-        };
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   static Future<Map<String, dynamic>> logout() async {
     try {
       if (_currentUserId == null) {
-        return {
-          'success': false,
-          'message': 'No user logged in'
-        };
+        return {'success': false, 'message': 'No user logged in'};
       }
-      
+      await http.post(Uri.parse('$baseUrl/auth/logout'), headers: headers);
       _currentUserId = null;
       _currentUser = null;
-      return {
-        'success': true,
-        'message': 'Logout successful'
-      };
+      return {'success': true, 'message': 'Logout successful'};
     } catch (e) {
       _currentUserId = null;
       _currentUser = null;
-      
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   static Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       if (_currentUserId == null) {
+        return {'success': false, 'message': 'No user logged in'};
+      }
+      final resp = await http.get(
+        Uri.parse('$baseUrl/auth/me'),
+        headers: headers,
+      );
+      final data = jsonDecode(resp.body);
+      if (resp.statusCode == 200 && data['success'] == true) {
+        _currentUser = data['data'];
         return {
-          'success': false,
-          'message': 'No user logged in'
+          'success': true,
+          'data': _currentUser,
+          'message': 'User profile retrieved',
         };
       }
       return {
-        'success': true,
-        'data': _currentUser,
-        'message': 'User profile retrieved'
+        'success': false,
+        'message': data['message'] ?? 'Failed to retrieve user profile',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -175,13 +138,6 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final user = ApiService.ensureOfflineUser(username: username, name: username);
-    _currentUserId = user.id;
-    _currentUser = user.toJson();
-    return {
-      'success': true,
-      'data': {'user': _currentUser, 'userId': _currentUserId},
-      'message': 'Login berhasil'
-    };
+    return {'success': false, 'message': 'Offline login disabled'};
   }
 }

@@ -5,7 +5,7 @@ import 'package:project_pbp_flutter/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
-  
+
   const LoginScreen({super.key, this.onLoginSuccess});
 
   @override
@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
@@ -29,24 +29,31 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final result = await AuthService.loginOffline(
+    final result = await AuthService.login(
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
     );
 
     if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
-        ),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Login berhasil'),
-          backgroundColor: Theme.of(context).colorScheme.tertiary,
-        ),
-      );
+      if (result['success'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Login berhasil'),
+            backgroundColor: Theme.of(context).colorScheme.tertiary,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Login gagal'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -75,11 +82,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Username/Email Field
                 TextFormField(
                   controller: _usernameController,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Username or email',
                     hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
@@ -87,8 +96,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -98,19 +111,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Password',
                     hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
                     prefixIcon: Icon(Icons.lock, color: cs.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () {
@@ -122,8 +139,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -136,9 +157,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Login Button
                 SizedBox(
                   height: 50,
@@ -157,7 +178,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(

@@ -6,11 +6,8 @@ import 'package:intl/intl.dart';
 
 class HutangDetailScreen extends StatefulWidget {
   final Hutang hutang;
-  
-  const HutangDetailScreen({
-    super.key,
-    required this.hutang,
-  });
+
+  const HutangDetailScreen({super.key, required this.hutang});
 
   @override
   State<HutangDetailScreen> createState() => _HutangDetailScreenState();
@@ -121,7 +118,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 if (amount > widget.hutang.remainingAmount) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Jumlah pembayaran tidak boleh melebihi sisa hutang Rp ${currencyFormat.format(widget.hutang.remainingAmount)}'),
+                      content: Text(
+                        'Jumlah pembayaran tidak boleh melebihi sisa hutang Rp ${currencyFormat.format(widget.hutang.remainingAmount)}',
+                      ),
                       backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
@@ -129,48 +128,60 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 }
 
                 try {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final cs2 = Theme.of(context).colorScheme;
                   await ApiService.addPayment(
                     hutangId: widget.hutang.id,
                     amount: amount,
-                    notes: notesController.text.trim().isNotEmpty ? notesController.text.trim() : null,
+                    notes: notesController.text.trim().isNotEmpty
+                        ? notesController.text.trim()
+                        : null,
                   );
 
+                  if (!context.mounted) return;
                   Navigator.pop(context);
-                  
+
                   // Refresh the hutang data
                   try {
-                    final updatedHutang = await ApiService.getHutang(widget.hutang.id);
-                    
+                    final updatedHutang = await ApiService.getHutang(
+                      widget.hutang.id,
+                    );
+
                     // Navigate back and pass the updated data
-                    if (mounted) {
-                      Navigator.pop(context, updatedHutang);
-                    }
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!context.mounted) return;
+                    Navigator.pop(context, updatedHutang);
+
+                    messenger.showSnackBar(
                       SnackBar(
                         content: const Text('Pembayaran berhasil ditambahkan'),
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        backgroundColor: cs2.secondary,
                       ),
                     );
                   } catch (e) {
                     // Even if refresh fails, close the dialog and show success
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+
+                    messenger.showSnackBar(
                       SnackBar(
-                        content: Text('Pembayaran berhasil, namun gagal memperbarui tampilan: ${e.toString()}'),
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        content: Text(
+                          'Pembayaran berhasil, namun gagal memperbarui tampilan: ${e.toString()}',
+                        ),
+                        backgroundColor: cs2.secondary,
                       ),
                     );
                   }
                 } catch (e) {
+                  if (!context.mounted) return;
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  final messenger = ScaffoldMessenger.of(context);
+                  final cs2 = Theme.of(context).colorScheme;
+                  messenger.showSnackBar(
                     SnackBar(
-                      content: Text('Gagal menambahkan pembayaran: ${e.toString()}'),
-                      backgroundColor: Theme.of(context).colorScheme.error,
+                      content: Text(
+                        'Gagal menambahkan pembayaran: ${e.toString()}',
+                      ),
+                      backgroundColor: cs2.error,
                     ),
                   );
                 }
@@ -184,12 +195,15 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
   }
 
   Future<void> _markAsPaid() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final cs2 = Theme.of(context).colorScheme;
+    final nav = Navigator.of(context);
     final remaining = currentHutang.remainingAmount;
     if (remaining <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: const Text('Hutang sudah lunas'),
-          backgroundColor: Theme.of(context).colorScheme.secondary,
+          backgroundColor: cs2.secondary,
         ),
       );
       return;
@@ -219,8 +233,15 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
       }
 
       if (currentHutang.status != 'paid') {
-        final newPayments = List<HutangPayment>.from(currentHutang.payments ?? const [])
-          ..add(HutangPayment(id: 'temp', amount: remaining, paymentDate: DateTime.now(), notes: 'Pelunasan cepat'));
+        final newPayments =
+            List<HutangPayment>.from(currentHutang.payments ?? const [])..add(
+              HutangPayment(
+                id: 'temp',
+                amount: remaining,
+                paymentDate: DateTime.now(),
+                notes: 'Pelunasan cepat',
+              ),
+            );
         if (mounted) {
           setState(() {
             currentHutang = Hutang(
@@ -238,17 +259,73 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!context.mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: const Text('Status diperbarui menjadi LUNAS'),
-          backgroundColor: Theme.of(context).colorScheme.secondary,
+          backgroundColor: cs2.secondary,
         ),
       );
+      nav.pop(currentHutang);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!context.mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Gagal memperbarui status: ${e.toString()}'),
-          backgroundColor: Theme.of(context).colorScheme.error,
+          backgroundColor: cs2.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteHutang() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final cs2 = Theme.of(context).colorScheme;
+    final nav = Navigator.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Hutang'),
+        content: const Text('Apakah Anda yakin ingin menghapus hutang ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      final ok = await ApiService.deleteHutang(currentHutang.id);
+      if (!context.mounted) return;
+      if (ok) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Hutang berhasil dihapus'),
+            backgroundColor: cs2.tertiary,
+          ),
+        );
+        if (!context.mounted) return;
+        nav.pop(true);
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Gagal menghapus hutang'),
+            backgroundColor: cs2.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Gagal menghapus hutang: ${e.toString()}'),
+          backgroundColor: cs2.error,
         ),
       );
     }
@@ -258,12 +335,25 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final hutang = currentHutang;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Hutang'),
         backgroundColor: cs.primary,
         elevation: 4,
+        actions: [
+          if (hutang.status != 'paid')
+            IconButton(
+              icon: const Icon(Icons.attach_money),
+              onPressed: _showAddPaymentDialog,
+              tooltip: 'Tambah Pembayaran',
+            ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _deleteHutang,
+            tooltip: 'Hapus Hutang',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -306,7 +396,10 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(context, hutang.status).withValues(alpha: 0.2),
+                          color: _getStatusColor(
+                            context,
+                            hutang.status,
+                          ).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: _getStatusColor(context, hutang.status),
@@ -334,7 +427,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                             Text(
                               'Total Hutang',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                                 fontSize: 14,
                               ),
                             ),
@@ -396,7 +491,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           child: Text(
                             hutang.debtor.name.substring(0, 1).toUpperCase(),
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSecondaryContainer,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSecondaryContainer,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -422,7 +519,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                                 hutang.debtor.phone!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -432,7 +531,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                                 hutang.debtor.address!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -453,7 +554,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: hutang.isOverdue
+                      ? Colors.red
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   width: 1,
                 ),
               ),
@@ -461,7 +564,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                 children: [
                   Icon(
                     hutang.isOverdue ? Icons.warning : Icons.schedule,
-                    color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: hutang.isOverdue
+                        ? Colors.red
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -474,7 +579,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurface,
+                            color: hutang.isOverdue
+                                ? Colors.red
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -482,7 +589,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           dateFormat.format(hutang.dueDate),
                           style: TextStyle(
                             fontSize: 16,
-                            color: hutang.isOverdue ? Colors.red : Theme.of(context).colorScheme.onSurface,
+                            color: hutang.isOverdue
+                                ? Colors.red
+                                : Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -490,10 +599,7 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                           const SizedBox(height: 4),
                           Text(
                             '${DateTime.now().difference(hutang.dueDate).inDays} hari yang lalu',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.red),
                           ),
                         ],
                       ],
@@ -599,7 +705,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                                     payment.notes!,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -609,7 +717,9 @@ class _HutangDetailScreenState extends State<HutangDetailScreen> {
                               dateFormat.format(payment.paymentDate),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],

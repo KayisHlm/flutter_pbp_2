@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
 
     // Check if user is currently authenticated
     final isAuth = AuthService.isAuthenticated;
-    
+
     setState(() {
       _isAuthenticated = isAuth;
       _isCheckingAuth = false;
@@ -63,10 +63,7 @@ class _MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('id', 'ID'),
-        Locale('en', 'US'),
-      ],
+      supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.light().copyWith(
@@ -88,13 +85,13 @@ class _MyAppState extends State<MyApp> {
             backgroundColor: Colors.green.shade600,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.green.shade600,
-          ),
+          style: TextButton.styleFrom(foregroundColor: Colors.green.shade600),
         ),
         appBarTheme: AppBarTheme(
           elevation: 4,
@@ -130,20 +127,30 @@ class _MyAppState extends State<MyApp> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.green.shade600), // Hijau emerald untuk fokus
+            borderSide: BorderSide(
+              color: Colors.green.shade600,
+            ), // Hijau emerald untuk fokus
           ),
-          hintStyle: TextStyle(color: Colors.grey.shade600), // Abu-abu untuk hint
-          labelStyle: TextStyle(color: Colors.grey.shade800), // Abu-abu gelap untuk label
+          hintStyle: TextStyle(
+            color: Colors.grey.shade600,
+          ), // Abu-abu untuk hint
+          labelStyle: TextStyle(
+            color: Colors.grey.shade800,
+          ), // Abu-abu gelap untuk label
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.grey.shade900, // Hitam untuk SnackBar
-          contentTextStyle: const TextStyle(color: Colors.white), // Putih untuk teks
+          contentTextStyle: const TextStyle(
+            color: Colors.white,
+          ), // Putih untuk teks
         ),
         chipTheme: ChipThemeData(
           backgroundColor: Colors.green.shade100, // Hijau muda untuk chip
           selectedColor: Colors.green.shade200, // Hijau untuk chip terpilih
-          labelStyle: TextStyle(color: Colors.grey.shade900), // Hitam untuk teks chip
+          labelStyle: TextStyle(
+            color: Colors.grey.shade900,
+          ), // Hitam untuk teks chip
         ),
       ),
       darkTheme: ThemeData(
@@ -168,15 +175,16 @@ class _MyAppState extends State<MyApp> {
             backgroundColor: Colors.green.shade600,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.green.shade400,
-          ),
+          style: TextButton.styleFrom(foregroundColor: Colors.green.shade400),
         ),
-        scaffoldBackgroundColor: Colors.grey.shade900, // Abu-abu gelap untuk background
+        scaffoldBackgroundColor:
+            Colors.grey.shade900, // Abu-abu gelap untuk background
         appBarTheme: AppBarTheme(
           elevation: 4,
           centerTitle: false,
@@ -211,15 +219,23 @@ class _MyAppState extends State<MyApp> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.green.shade600), // Hijau emerald untuk fokus
+            borderSide: BorderSide(
+              color: Colors.green.shade600,
+            ), // Hijau emerald untuk fokus
           ),
-          hintStyle: TextStyle(color: Colors.grey.shade400), // Abu-abu untuk hint
-          labelStyle: TextStyle(color: Colors.grey.shade200), // Abu-abu terang untuk label
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+          ), // Abu-abu untuk hint
+          labelStyle: TextStyle(
+            color: Colors.grey.shade200,
+          ), // Abu-abu terang untuk label
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.grey.shade900, // Hitam untuk SnackBar
-          contentTextStyle: const TextStyle(color: Colors.white), // Putih untuk teks
+          contentTextStyle: const TextStyle(
+            color: Colors.white,
+          ), // Putih untuk teks
         ),
         chipTheme: ChipThemeData(
           backgroundColor: Colors.green.shade700, // Hijau emerald untuk chip
@@ -229,14 +245,10 @@ class _MyAppState extends State<MyApp> {
       ),
       themeMode: ThemeMode.dark, // Set to dark theme by default
       home: _isCheckingAuth
-          ? const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            )
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : _isAuthenticated
-              ? HomeScreen(onLogout: _onLogout)
-              : LoginScreen(onLoginSuccess: _onLoginSuccess),
+          ? HomeScreen(onLogout: _onLogout)
+          : LoginScreen(onLoginSuccess: _onLoginSuccess),
       debugShowCheckedModeBanner: false,
     );
   }

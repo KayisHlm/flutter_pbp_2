@@ -16,9 +16,10 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  
+  List<Map<String, String>> _userOptions = [];
+
   DateTime _selectedDueDate = DateTime.now().add(const Duration(days: 30));
-  
+
   final NumberFormat currencyFormat = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -33,6 +34,7 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchUsers();
   }
 
   @override
@@ -44,6 +46,19 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
     super.dispose();
   }
 
+  Future<void> _fetchUsers() async {
+    try {
+      final users = await ApiService.getUsers();
+      if (!mounted) return;
+      setState(() {
+        _userOptions = users
+            .map((u) => {'email': (u.email ?? '').trim(), 'name': u.name})
+            .where((m) => m['email']!.isNotEmpty)
+            .toList();
+      });
+    } catch (_) {}
+  }
+
   Future<void> _selectDueDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -52,7 +67,7 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       locale: const Locale('id', 'ID'),
     );
-    
+
     if (picked != null && picked != _selectedDueDate) {
       setState(() {
         _selectedDueDate = picked;
@@ -73,7 +88,9 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
     try {
       final email = _emailController.text.trim();
       final description = _descriptionController.text.trim();
-      final amount = double.parse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), ''));
+      final amount = double.parse(
+        _amountController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+      );
       final notes = _notesController.text.trim();
 
       await ApiService.createHutang(
@@ -85,23 +102,23 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
       );
 
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Hutang berhasil ditambahkan'),
           backgroundColor: Theme.of(context).colorScheme.tertiary,
         ),
       );
-      
+
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         _errorMessage = 'Gagal menambahkan hutang: ${e.toString()}';
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_errorMessage!),
@@ -114,9 +131,7 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tambah Hutang Baru'),
-      ),
+      appBar: AppBar(title: const Text('Tambah Hutang Baru')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -124,23 +139,64 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Penghutang',
-                  hintText: 'Masukkan email penghutang',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Email wajib diisi';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim())) {
-                    return 'Format email tidak valid';
-                  }
-                  return null;
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue t) {
+                  final q = t.text.trim().toLowerCase();
+                  if (q.isEmpty) return const Iterable<String>.empty();
+                  return _userOptions.map((m) => m['email']!).where((e) => e.toLowerCase().contains(q));
                 },
+                fieldViewBuilder: (context, ctrl, focusNode, onSubmit) {
+                  ctrl.addListener(() {
+                    _emailController.text = ctrl.text;
+                  });
+                  return TextFormField(
+                    controller: ctrl,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Email Penghutang',
+                      hintText: 'Ketik untuk mencari pengguna',
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    onFieldSubmitted: (_) => onSubmit(),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim())) return 'Format email tidak valid';
+                      return null;
+                    },
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  final items = options.toList();
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 240),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            final email = items[index];
+                            final map = _userOptions.firstWhere(
+                              (m) => m['email'] == email,
+                              orElse: () => const {'name': ''},
+                            );
+                            final name = map['name']!;
+                            return ListTile(
+                              title: Text(name),
+                              subtitle: Text(email),
+                              onTap: () => onSelected(email),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                onSelected: (email) => _emailController.text = email,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -170,7 +226,10 @@ class _AddHutangScreenState extends State<AddHutangScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Jumlah hutang wajib diisi';
                   }
-                  if (double.tryParse(value.replaceAll(RegExp(r'[^0-9]'), '')) == null) {
+                  if (double.tryParse(
+                        value.replaceAll(RegExp(r'[^0-9]'), ''),
+                      ) ==
+                      null) {
                     return 'Jumlah hutang harus berupa angka';
                   }
                   return null;

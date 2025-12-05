@@ -27,7 +27,10 @@ class Hutang {
     if (payments == null || payments!.isEmpty) {
       return amount;
     }
-    double totalPaid = payments!.fold(0, (sum, payment) => sum + payment.amount);
+    double totalPaid = payments!.fold(
+      0,
+      (sum, payment) => sum + payment.amount,
+    );
     return amount - totalPaid;
   }
 
@@ -47,7 +50,8 @@ class Hutang {
       notes: json['notes'],
       payments: json['payments'] != null
           ? List<HutangPayment>.from(
-              json['payments'].map((x) => HutangPayment.fromJson(x)))
+              json['payments'].map((x) => HutangPayment.fromJson(x)),
+            )
           : null,
     );
   }

@@ -54,7 +54,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
+        name: _nameController.text.trim().isNotEmpty
+            ? _nameController.text.trim()
+            : null,
       );
 
       if (result['success'] == true) {
@@ -65,13 +67,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               backgroundColor: Theme.of(context).colorScheme.tertiary,
             ),
           );
-          
+
           // Navigate to login after successful registration
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => const LoginScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         }
       } else {
@@ -144,11 +144,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Name Field
                 TextFormField(
                   controller: _nameController,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Full Name (Optional)',
                     hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
@@ -156,16 +158,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Username Field
                 TextFormField(
                   controller: _usernameController,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Username',
                     hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
@@ -173,8 +181,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -187,11 +199,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Email Field
                 TextFormField(
                   controller: _emailController,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email',
@@ -200,8 +214,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -214,19 +232,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Password',
                     hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
                     prefixIcon: Icon(Icons.lock_outline, color: cs.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () {
@@ -238,8 +260,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -252,19 +278,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Confirm Password Field
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Confirm Password',
                     hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
                     prefixIcon: Icon(Icons.lock_outline, color: cs.primary),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       onPressed: () {
@@ -276,8 +306,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     filled: Theme.of(context).inputDecorationTheme.filled,
                     fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                     border: Theme.of(context).inputDecorationTheme.border,
-                    enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-                    focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                    enabledBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.enabledBorder,
+                    focusedBorder: Theme.of(
+                      context,
+                    ).inputDecorationTheme.focusedBorder,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -287,13 +321,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Register Button
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleRegister,
-                  style: ElevatedButton.styleFrom(
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: cs.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
@@ -306,7 +340,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(
@@ -320,7 +356,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

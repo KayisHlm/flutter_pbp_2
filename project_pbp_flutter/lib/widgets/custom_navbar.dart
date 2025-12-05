@@ -46,10 +46,7 @@ class CustomNavbar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   const Text(
                     'Administrator',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
@@ -75,11 +72,7 @@ class CustomNavbar extends StatelessWidget implements PreferredSizeWidget {
                             );
                           },
                         )
-                      : const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                      : const Icon(Icons.person, color: Colors.white, size: 24),
                 ),
               ),
             ],
@@ -89,9 +82,11 @@ class CustomNavbar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: onMenuPressed ?? () {
-            Scaffold.of(context).openEndDrawer();
-          },
+          onPressed:
+              onMenuPressed ??
+              () {
+                Scaffold.of(context).openEndDrawer();
+              },
         ),
       ],
     );

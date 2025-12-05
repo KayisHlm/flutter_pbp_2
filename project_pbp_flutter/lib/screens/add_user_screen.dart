@@ -16,7 +16,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  
+
   bool _isLoading = false;
 
   @override
@@ -46,16 +46,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
         if (result['success'] != true) {
           throw Exception(result['message'] ?? 'Registrasi gagal');
         }
-
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('User berhasil didaftarkan'),
             backgroundColor: Theme.of(context).colorScheme.tertiary,
           ),
         );
-        
-        Navigator.pop(context, true); // Return true to indicate success
+        Navigator.pop(context, true);
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal menambahkan user: ${e.toString()}'),
@@ -104,11 +104,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.person_add,
-                        size: 48,
-                        color: Colors.white,
-                      ),
+                      Icon(Icons.person_add, size: 48, color: Colors.white),
                       const SizedBox(height: 12),
                       Text(
                         'Tambah User Penghutang',
@@ -121,17 +117,14 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Masukkan data user yang akan menjadi penghutang',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
 
               // Username Field
