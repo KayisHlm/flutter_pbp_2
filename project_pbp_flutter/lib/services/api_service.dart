@@ -6,7 +6,7 @@ import 'package:project_pbp_flutter/models/hutang.dart';
 import 'package:project_pbp_flutter/services/auth_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:3000/api';
+  static const String baseUrl = 'http://localhost:3000/api';
   static bool offline = false;
   static final List<User> _users = [];
   static final List<Hutang> _hutangs = [];
